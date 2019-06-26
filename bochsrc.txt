@@ -1,0 +1,10 @@
+megs: 32
+romimage: file=/home/sankalps/Downloads/bochs-20120815/bios/BIOS-bochs-legacy , address=0xf0000
+vgaromimage: file=/home/sankalps/Downloads/bochs-20120815/bios/VGABIOS-lgpl-latest
+floppya: 1_44=floppy.img, status=inserted
+boot: a 
+log: bochsout.txt
+gdbstub: enabled=1, port=1234
+mouse: enabled=0
+#display_library: x, options="gui_debug"
+#magic_break: enabled=1

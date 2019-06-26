@@ -1,0 +1,11 @@
+rm *.o
+rm *.bin
+nasm -f bin -o boot.bin boot.asm
+nasm -f bin -o gdt.bin gdt.asm 
+gcc -c -g -Os -march=i686 -ffreestanding -Wall -fno-toplevel-reorder -I. -o vbr.o vbr.c
+ld -static -Tlink.ld -nostdlib --nmagic -o vbr.elf vbr.o
+objcopy -O binary vbr.elf vbr.bin
+dd if=/dev/zero of=floppy.img bs=512 count=2880
+dd if=boot.bin of=floppy.img bs=512 count=1 conv=notrunc
+dd if=vbr.bin of=floppy.img bs=512 seek=1 conv=notrunc 
+dd if=gdt.bin of=floppy.img bs=512 conv=notrunc seek=2

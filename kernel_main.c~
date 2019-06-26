@@ -1,0 +1,87 @@
+#include "kernel_main.h"
+#include "common.h"
+/*Jump to the main function. This is our first instruction ya know*/
+__asm__("push %ebx");
+__asm__("push %eax");
+__asm__("call main");
+/**
+ * The multiboot header structure 
+ */
+ struct multiboot_info 
+{
+	u32int flags ;
+	u32int memory_low ;
+	u32int memory_high ;
+	u32int boot_device ; 
+	u32int cmd_line :
+	u32int mods_count ;
+	u32int mods_addr;
+	u32int syms0;
+	u32int syms1;
+	u32int syms2;
+	u32int mmap_length ;
+	u32int mmap_addr ;
+	u32int drives_length ;
+	u32int drives_addr ;
+	u32int config_table ;
+	u32int bootloader_name ;
+	u32int apm_table ;
+	u32int vbe_control_info;
+	u32int vbe_mode_info ;
+	u16int vbe_mode ;
+	u16int vbe_interface_seg;
+	u16int vbe_interface_off;
+	u16int vbe_interface_len ;
+};
+extern void init_descriptor_tables() ;
+extern void monitor_write(char * s);
+extern void monitor_clear();
+extern void monitor_dec(uint32_t , uint8_t);
+/*If we are following a multiboot header type of booting.The following
+ * conditions should be met 
+ * 1. EAX should have the value as 0x2BADB002
+ * */
+static void verify_multiboot_header(u32int eax, u32int ebx)
+{
+	if(eax==0x2BADB002)
+		monitor_write("The multiboot header successful\n");
+	else
+		monitor_write("Multiboot header not successful");
+	return ;
+}
+/*The starting point for our kernel. This is where our high level OS starts*/
+void main(u32int ebx, u32int eax)
+{
+	monitor_clear();
+	monitor_write("The multiboot header address is :");
+	monitor_dec(ebx , 0);
+	monitor_write("\n");
+	/*print the multiboot information from the address present in the ebx
+	 * register and also verify the multiboot header*/
+	verify_multiboot_header(eax, ebx);
+	monitor_write("The output library is working fine. Now onto the input library. *Me Gusta* ");
+	/*intialize the descriptors in the memory both for GDT and IDT*/
+	init_descriptor_tables();
+	monitor_write("The descriptor tables have been initialized :P\n");
+	while(1)
+	;
+}
+// Write a byte out to the specified port.
+void outb(u16int port, u8int value)
+{
+    asm volatile ("outb %1, %0" : : "dN" (port), "a" (value));
+}
+
+u8int inb(u16int port)
+{
+   u8int ret;
+   asm volatile("inb %1, %0" : "=a" (ret) : "dN" (port));
+   return ret;
+}
+
+u16int inw(u16int port)
+{
+   u16int ret;
+   asm volatile ("inw %1, %0" : "=a" (ret) : "dN" (port));
+   return ret;
+} 

@@ -1,0 +1,109 @@
+[bits 16]
+[org 0x7c00]
+
+; The starting part of the bootloader function .For now , all it does is print the string
+main: 
+	mov si , welcome_message 
+	call print_string
+	call check_A20
+	mov si , kernel_loading_message 
+	call print_string 
+	;call repeat_read_stub 
+	call repeat_read  
+	
+;Some of the preprocessing directives which can be of help 
+bytes_per_sector equ 512 
+total_sectors    equ 2880
+kernel_location_sector equ 2	
+;This module is supposed to load the kernel into the memory.  
+repeat_read:	
+	;Code to load the second sector on the disk into memory location 0x2000:0x0000
+	mov bx, 0x60	; Segment location to read into (remember can't load direct to segment register)
+	mov es, bx
+	mov bx, 0	; Offset to read into
+	mov ah, 02	; BIOS read sector function
+	mov al, 0x12	; read 18 sectors on the beginning of the floppy disk 
+	mov ch,	0	; Track to read
+	mov cl,	02	; Sector to read
+	mov dh,	0	; Head to read
+	mov dl,	00	; Drive to read
+	int 0x13	; Make the BIOS call (int 13h contains mainly BIOS drive functions)
+	;Set up the data segment 
+	jnc repeat_read_success 
+	mov si , error_message 
+	call print_string 
+	jmp repeat_read 
+	ret 
+repeat_read_success:
+	mov si , kernel_loading_success 
+	call print_string
+	;Set the data segment 
+	mov ax , 0x60
+	;mov ds , ax 
+	mov si , error_message 
+	call print_string 
+	jmp 0x60:0x0  ; Load at address 0x600
+        mov si , error_message 
+	call print_string
+repeat_read_stub:
+	mov bx , 0x3C0
+	mov es , bx 
+	mov bx , 0
+	mov ah , 02
+	mov al , 0x12
+	mov ch , 0x0
+	mov cl , 0x2
+	mov dh , 1
+	mov dl , 0
+	int 0x13 
+	jnc repeat_read_stub
+	;The stub has been loaded . Return 
+	ret 
+loop:   jmp loop 	
+;This module is used to print the welcome message 
+print_string : 
+		mov ah , 0x0E
+		xor bh , bh 
+		mov bl , 0xEF 
+		lodsb 
+		or al , al
+		jz return_function
+		;int 0x10 ;Ah and Bh have already been set
+		jmp print_string
+		
+return_function:
+		ret  
+everything_working_fine:
+		mov si , final_string 
+		call print_string 
+		ret 
+LBACHS:
+ PUSH dx			; Save the value in dx
+ XOR dx,dx		; Zero dx
+ MOV bx, [SectorsPerTrack]	; Move into place STP (LBA all ready in place)
+ DIV bx			; Make the divide (ax/bx -> ax,dx)
+ inc dx			; Add one to the remainder (sector value)
+ push dx			; Save the sector value on the stack
+
+ XOR dx,dx		; Zero dx
+ MOV bx, [NumHeads]	; Move NumHeads into place (NumTracks all ready in place)
+ DIV bx			; Make the divide (ax/bx -> ax,dx)
+
+ MOV cx,ax		; Move ax to cx (Cylinder)
+ MOV bx,dx		; Move dx to bx (Head)
+ POP ax			; Take the last value entered on the stack off.
+			; It doesn't need to go into the same register.
+			; (Sector)
+ POP dx			; Restore dx, just in case something important was
+			; originally in there before running this.
+ RET			; Return to the main function
+error_message db " In here.", 0
+enabled db "A20 enabled ",0
+disabled db "A20 disabled ",0
+welcome_message db " Welcome to the silly operating system.",0
+kernel_loading_message db " Loading the kernel modules.",0
+kernel_loading_success db " Kernel module loading success.",0
+final_string db "Everything is working fine"
+times 510 - ( $ - $$ ) db 0
+dw 0xAA55 
+

@@ -1,0 +1,33 @@
+// Testing code for satyam_m
+
+#include<stdio.h>
+#include<string.h>
+int main()
+{
+	int c,d,n,i,k;
+	char a[1001];
+	scanf("%d",&n);
+	for(i=0;i<n;i++)
+	{
+		k=0;d=0;
+		scanf("%s",a);
+		c=strlen(a);
+		while(d!=c-1)
+		{
+			if(a[d+1]>a[d])
+			{
+				k=k+a[d+1]-a[d];
+			}
+			else if(a[d+1]<a[d])
+			{
+				k=k+122-a[d]+a[d+1]-96;
+			}
+			d++;
+		}
+		k=k+c+1;
+//		printf("c*11 is %d\t, k is %d\n",c*11,k);
+		if(k> c*11)printf("NO\n");
+		else printf("YES\n");
+	}
+	return 0;
+}
